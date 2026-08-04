@@ -1,0 +1,22 @@
+{
+  "name": "pokerockerdex-backend",
+  "version": "1.0.0",
+  "description": "Backend de PokeRockerDex para autenticación y gestión de equipos Pokémon.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ai-sprvvnt/pokerockerdex-backend.git"
+  },
+  "keywords": [],
+  "author": "Felipe García",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ai-sprvvnt/pokerockerdex-backend/issues"
+  },
+  "homepage": "https://github.com/ai-sprvvnt/pokerockerdex-backend#readme",
+  "private": true
+}
