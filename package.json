@@ -18,5 +18,9 @@
     "url": "https://github.com/ai-sprvvnt/pokerockerdex-backend/issues"
   },
   "homepage": "https://github.com/ai-sprvvnt/pokerockerdex-backend#readme",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
 }
