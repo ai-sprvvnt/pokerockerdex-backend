@@ -1,84 +1,216 @@
 # PokeRockerDex Backend
 
-API propia de PokeRockerDex para administrar usuarios, autenticación y equipos personales de Pokémon.
+API propia de **PokeRockerDex**, una aplicación full stack desarrollada como Proyecto Final de Desarrollo Web de TripleTen.
 
 ## Estado del proyecto
 
-Proyecto Final de Desarrollo Web de TripleTen. Actualmente se encuentra en la etapa de planificación y preparación.
+El backend definitivo de PokeRockerDex se desarrollará formalmente en la **Etapa 2 — Back-end**.
 
-## Funcionalidades previstas
+Durante la corrección de la **Etapa 1.2 — Integración con API** se implementó una API mínima temporal con Node.js y Express para cubrir un flujo real de escritura solicitado en la primera revisión de TripleTen y conectar la vista de equipo del frontend con un servidor propio.
 
-- Registrar usuarios.
-- Iniciar sesión mediante JWT.
-- Mantener rutas protegidas.
-- Crear automáticamente un equipo por usuario.
-- Consultar el equipo personal.
-- Editar el nombre del equipo.
-- Agregar hasta seis Pokémon.
-- Evitar integrantes duplicados.
-- Eliminar integrantes.
-- Impedir que un usuario modifique recursos ajenos.
+Esta implementación temporal permite:
 
-## Endpoints previstos
+- consultar el equipo actual;
+- agregar Pokémon mediante una solicitud POST real;
+- validar los datos recibidos;
+- impedir Pokémon duplicados;
+- limitar el equipo a un máximo de seis integrantes.
 
-### Autenticación y usuario
+Los datos se almacenan **en memoria** y se pierden cuando se reinicia el proceso Node. Esta limitación es intencional para la Etapa 1.2; la persistencia definitiva mediante MongoDB pertenece a una etapa posterior.
 
-```text
-POST /signup
-POST /signin
-GET  /users/me
+## API temporal disponible
+
+### Consultar el equipo
+
+```http
+GET /teams
 ```
 
-### Equipo personal
+Respuesta de ejemplo:
 
-```text
-GET    /teams/me
-PATCH  /teams/me
-POST   /teams/me/members
-DELETE /teams/me/members/:pokeApiId
+```json
+{
+  "pokemon": [],
+  "teamSize": 0,
+  "maxTeamSize": 6
+}
 ```
 
-## Tecnologías previstas
+### Agregar un Pokémon
+
+```http
+POST /teams/pokemon
+Content-Type: application/json
+```
+
+Cuerpo esperado:
+
+```json
+{
+  "id": 25,
+  "name": "pikachu",
+  "image": "https://example.com/pikachu.png",
+  "types": ["electric"]
+}
+```
+
+Respuesta exitosa:
+
+```text
+201 Created
+```
+
+## Validaciones actuales
+
+Para aceptar un Pokémon, el backend comprueba que:
+
+- el cuerpo sea un objeto válido;
+- `id` sea un entero positivo;
+- `name` sea un string no vacío;
+- `image` sea un string;
+- `types` sea un array con al menos un tipo válido.
+
+Reglas del equipo:
+
+- máximo 6 Pokémon;
+- no se permiten IDs duplicados.
+
+Códigos usados actualmente:
+
+```text
+200  consulta correcta del equipo
+201  Pokémon agregado correctamente
+400  payload inválido
+409  Pokémon duplicado o equipo lleno
+```
+
+## Persistencia temporal
+
+El equipo se mantiene en un array en memoria dentro del proceso Node.
+
+```text
+reinicio del servidor
+        ↓
+el equipo vuelve a estar vacío
+```
+
+No debe interpretarse como la persistencia definitiva del proyecto.
+
+## Tecnologías actuales
 
 - Node.js
-- Express
-- MongoDB
-- Mongoose
-- JSON Web Token
-- bcrypt
-- Celebrate y Joi
-- ESLint
+- Express 5
+- CORS
+- JavaScript CommonJS
+
+Las tecnologías de la Etapa 2 —como MongoDB, Mongoose, JWT, bcrypt, validación avanzada, logging y manejo centralizado de errores— todavía no forman parte de esta implementación temporal.
 
 ## Instalación
+
+Clona el repositorio:
 
 ```bash
 git clone git@github.com:ai-sprvvnt/pokerockerdex-backend.git
 cd pokerockerdex-backend
+```
+
+Instala dependencias:
+
+```bash
 npm install
+```
+
+Inicia el servidor:
+
+```bash
 npm start
 ```
 
-## Variables de entorno previstas
+Por defecto el servidor utiliza:
 
-```env
-PORT=
-MONGODB_URI=
-JWT_SECRET=
-NODE_ENV=
+```text
+http://localhost:3001
 ```
 
-Las credenciales reales no deben subirse al repositorio. Se documentarán mediante un archivo `.env.example`.
+También puede recibir el puerto mediante:
 
-## Front-end
+```text
+process.env.PORT
+```
+
+## Estructura actual relevante
+
+```text
+pokerockerdex-backend/
+├── app.js
+├── package.json
+└── routes/
+    └── teams.js
+```
+
+## Integración con el frontend
+
+Repositorio:
 
 https://github.com/ai-sprvvnt/pokerockerdex-frontend
 
-## API externa relacionada
+El frontend utiliza un cliente separado:
 
-El front-end utilizará PokéAPI v2 para consultar información pública de Pokémon. El back-end almacenará solamente los datos mínimos necesarios para representar el equipo del usuario.
+```text
+src/utils/MainApi.js
+```
+
+Flujo temporal de Etapa 1.2:
+
+```text
+PokéAPI GET
+   ↓
+PokemonDetail
+   ↓
+POST /teams/pokemon
+   ↓
+PokeRockerDex Backend
+   ↓
+GET /teams
+   ↓
+/my-team
+```
+
+## Próxima evolución — Etapa 2
+
+La API temporal no sustituye el backend definitivo.
+
+En la Etapa 2 se desarrollará la arquitectura full stack prevista, incluyendo al menos:
+
+- modelo de usuario;
+- modelo persistente para los datos/equipo;
+- MongoDB y Mongoose;
+- registro de usuarios;
+- inicio de sesión;
+- JWT;
+- autorización;
+- persistencia por usuario;
+- endpoints GET, POST y DELETE definitivos;
+- validación de solicitudes;
+- manejo centralizado de errores;
+- logging;
+- configuración segura mediante variables de entorno;
+- despliegue mediante HTTPS.
+
+Los nombres y rutas definitivos se cerrarán contra los criterios oficiales de la Etapa 2 antes de comenzar su implementación.
+
+## Deploy
+
+La API temporal se utiliza actualmente durante el desarrollo y las pruebas de la corrección de Etapa 1.2.
+
+El despliegue full stack definitivo se realizará en una etapa posterior junto con la implementación persistente y la configuración de producción.
 
 ## Aviso
 
 PokeRockerDex es un proyecto educativo no oficial. No está afiliado, respaldado ni patrocinado por Nintendo, Game Freak, Creatures Inc. o The Pokémon Company.
 
 Los nombres, personajes, imágenes y demás elementos relacionados con Pokémon pertenecen a sus respectivos titulares.
+
+## Autor
+
+[Felipe García](https://github.com/ai-sprvvnt)
