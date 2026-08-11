@@ -201,9 +201,30 @@ Los nombres y rutas definitivos se cerrarán contra los criterios oficiales de l
 
 ## Deploy
 
-La API temporal se utiliza actualmente durante el desarrollo y las pruebas de la corrección de Etapa 1.2.
+La API temporal de PokeRockerDex se encuentra desplegada públicamente en una VM de Google Cloud.
 
-El despliegue full stack definitivo se realizará en una etapa posterior junto con la implementación persistente y la configuración de producción.
+### API pública
+
+https://api.sprvvnt.mooo.com
+
+El backend se ejecuta con Node.js y Express mediante el proceso PM2:
+
+`pokerockerdex-api`
+
+La aplicación escucha internamente en el puerto `3001` y Nginx actúa como reverse proxy para exponer la API mediante HTTPS.
+
+Endpoints disponibles actualmente:
+
+- `GET /teams`;
+- `POST /teams/pokemon`.
+
+El frontend público se encuentra disponible en:
+
+https://sprvvnt.mooo.com
+
+La persistencia del equipo continúa siendo temporal en memoria. Reiniciar el proceso Node o la VM elimina los datos actuales del equipo.
+
+Este despliegue permite validar públicamente la integración realizada para la Etapa 1.2. MongoDB, autenticación, JWT, persistencia por usuario y la arquitectura definitiva del backend corresponden a la Etapa 2.
 
 ## Aviso
 
