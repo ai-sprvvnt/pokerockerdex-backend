@@ -7,16 +7,16 @@ const team = [];
 
 function isValidPokemon(pokemon) {
   return (
-    pokemon !== null &&
-    typeof pokemon === 'object' &&
-    Number.isInteger(pokemon.id) &&
-    pokemon.id > 0 &&
-    typeof pokemon.name === 'string' &&
-    pokemon.name.trim().length > 0 &&
-    typeof pokemon.image === 'string' &&
-    Array.isArray(pokemon.types) &&
-    pokemon.types.length > 0 &&
-    pokemon.types.every(
+    pokemon !== null
+    && typeof pokemon === 'object'
+    && Number.isInteger(pokemon.id)
+    && pokemon.id > 0
+    && typeof pokemon.name === 'string'
+    && pokemon.name.trim().length > 0
+    && typeof pokemon.image === 'string'
+    && Array.isArray(pokemon.types)
+    && pokemon.types.length > 0
+    && pokemon.types.every(
       (type) => typeof type === 'string' && type.trim().length > 0,
     )
   );
