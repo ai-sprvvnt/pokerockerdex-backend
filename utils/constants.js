@@ -1,0 +1,7 @@
+const SALT_ROUNDS = 10;
+const DUPLICATE_KEY_ERROR_CODE = 11000;
+
+module.exports = {
+  SALT_ROUNDS,
+  DUPLICATE_KEY_ERROR_CODE,
+};
