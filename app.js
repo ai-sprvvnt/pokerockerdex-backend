@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-const teamsRouter = require('./routes/teams');
+const routes = require('./routes');
+const NotFoundError = require('./errors/NotFoundError');
+const errorHandler = require('./middlewares/error-handler');
 const { PORT, databaseAddress } = require('./utils/config');
 
 const app = express();
@@ -10,7 +12,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/teams', teamsRouter);
+app.use('/', routes);
+
+app.use((req, res, next) => {
+  next(new NotFoundError());
+});
+
+app.use(errorHandler);
 
 mongoose
   .connect(databaseAddress)
