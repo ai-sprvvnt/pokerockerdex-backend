@@ -13,3 +13,14 @@ module.exports = {
   PORT,
   databaseAddress,
 };
+
+const DEVELOPMENT_JWT_SECRET = 'pokerockerdex-dev-secret';
+
+const jwtSecret = NODE_ENV === 'production' ? process.env.JWT_SECRET : DEVELOPMENT_JWT_SECRET;
+
+module.exports = {
+  NODE_ENV,
+  PORT,
+  databaseAddress,
+  jwtSecret,
+};

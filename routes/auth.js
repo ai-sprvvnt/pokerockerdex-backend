@@ -1,8 +1,11 @@
 const router = require('express').Router();
 
-const { createUser } = require('../controllers/users');
-const { validateSignup } = require('../utils/validation');
+const { createUser, login } = require('../controllers/users');
+
+const { validateSignup, validateSignin } = require('../utils/validation');
 
 router.post('/signup', validateSignup, createUser);
+
+router.post('/signin', validateSignin, login);
 
 module.exports = router;
