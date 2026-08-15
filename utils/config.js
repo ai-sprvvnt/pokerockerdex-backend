@@ -8,12 +8,6 @@ const DEVELOPMENT_DB_ADDRESS = 'mongodb://127.0.0.1:27017/pokerockerdex';
 
 const databaseAddress = NODE_ENV === 'production' ? DB_ADDRESS : DEVELOPMENT_DB_ADDRESS;
 
-module.exports = {
-  NODE_ENV,
-  PORT,
-  databaseAddress,
-};
-
 const DEVELOPMENT_JWT_SECRET = 'pokerockerdex-dev-secret';
 
 const jwtSecret = NODE_ENV === 'production' ? process.env.JWT_SECRET : DEVELOPMENT_JWT_SECRET;
