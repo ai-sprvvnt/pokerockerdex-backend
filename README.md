@@ -2,55 +2,81 @@
 
 API propia de **PokeRockerDex**, una aplicación full stack desarrollada como Proyecto Final de Desarrollo Web de TripleTen.
 
-## Estado del proyecto
+## Estado actual
 
-El backend definitivo de PokeRockerDex se desarrollará formalmente en la **Etapa 2 — Back-end**.
+La **Etapa 1** está aprobada y cerrada. La **Etapa 2 — Back-end** está implementada, validada localmente y desplegada en producción.
 
-Durante la corrección de la **Etapa 1.2 — Integración con API** se implementó una API mínima temporal con Node.js y Express para cubrir un flujo real de escritura solicitado en la primera revisión de TripleTen y conectar la vista de equipo del frontend con un servidor propio.
+El backend definitivo incluye:
 
-Esta implementación temporal permite:
+- infraestructura de desarrollo configurada;
+- MongoDB y Mongoose integrados;
+- modelos `User` y `Pokemon`;
+- validación con Celebrate/Joi;
+- manejo centralizado de errores;
+- `POST /signup` con bcrypt;
+- `POST /signin` con JWT;
+- middleware de autorización;
+- `GET /users/me`;
+- `GET /teams` persistente por usuario;
+- `POST /teams/pokemon` persistente por usuario;
+- máximo 6 Pokémon;
+- prevención de duplicados por usuario;
+- `DELETE /teams/pokemon/:id` por `_id` MongoDB;
+- ownership validado con respuesta 403;
+- logging JSON en `request.log` y `error.log`;
+- Helmet y rate limiting;
+- configuración `trust proxy` para producción detrás de Nginx;
+- servidor Node ligado a `127.0.0.1` en producción;
+- backend definitivo desplegado con PM2;
+- HTTPS validado públicamente;
+- estado de PM2 persistido mediante `pm2 save`.
 
-- consultar el equipo actual;
-- agregar Pokémon mediante una solicitud POST real;
-- validar los datos recibidos;
-- impedir Pokémon duplicados;
-- limitar el equipo a un máximo de seis integrantes.
+## Scripts
 
-Los datos se almacenan **en memoria** y se pierden cuando se reinicia el proceso Node. Esta limitación es intencional para la Etapa 1.2; la persistencia definitiva mediante MongoDB pertenece a una etapa posterior.
-
-## API temporal disponible
-
-### Consultar el equipo
-
-```http
-GET /teams
+```bash
+npm start
+npm run dev
+npm run lint
 ```
 
-Respuesta de ejemplo:
+En desarrollo:
+
+```text
+http://localhost:3000
+```
+
+El puerto puede sobrescribirse mediante `process.env.PORT`.
+
+## Variables de entorno
+
+En desarrollo la aplicación funciona sin `.env`.
+
+Producción utiliza:
+
+```text
+NODE_ENV=production
+PORT=3001
+DB_ADDRESS=mongodb://127.0.0.1:27017/pokerockerdex
+JWT_SECRET=<secreto productivo>
+```
+
+`.env` está ignorado por Git y en la VM se mantiene con permisos restrictivos.
+
+## Autenticación
+
+### Registro
+
+```http
+POST /signup
+```
+
+Ejemplo:
 
 ```json
 {
-  "pokemon": [],
-  "teamSize": 0,
-  "maxTeamSize": 6
-}
-```
-
-### Agregar un Pokémon
-
-```http
-POST /teams/pokemon
-Content-Type: application/json
-```
-
-Cuerpo esperado:
-
-```json
-{
-  "id": 25,
-  "name": "pikachu",
-  "image": "https://example.com/pikachu.png",
-  "types": ["electric"]
+  "email": "usuario@example.com",
+  "password": "Password123!",
+  "name": "Felipe"
 }
 ```
 
@@ -60,171 +86,373 @@ Respuesta exitosa:
 201 Created
 ```
 
-## Validaciones actuales
+La contraseña se almacena mediante bcrypt y no se devuelve al cliente.
 
-Para aceptar un Pokémon, el backend comprueba que:
+### Inicio de sesión
 
-- el cuerpo sea un objeto válido;
-- `id` sea un entero positivo;
-- `name` sea un string no vacío;
-- `image` sea un string;
-- `types` sea un array con al menos un tipo válido.
+```http
+POST /signin
+```
 
-Reglas del equipo:
+Ejemplo:
+
+```json
+{
+  "email": "usuario@example.com",
+  "password": "Password123!"
+}
+```
+
+Respuesta:
+
+```json
+{
+  "token": "<jwt>"
+}
+```
+
+El JWT contiene `_id` del usuario y utiliza expiración de siete días.
+
+## Autorización
+
+Las rutas protegidas esperan:
+
+```http
+Authorization: Bearer <JWT>
+```
+
+Sin JWT válido:
+
+```text
+401 Unauthorized
+```
+
+Rutas públicas:
+
+```text
+POST /signup
+POST /signin
+```
+
+Rutas protegidas:
+
+```text
+GET    /users/me
+GET    /teams
+POST   /teams/pokemon
+DELETE /teams/pokemon/:id
+```
+
+## Usuario actual
+
+```http
+GET /users/me
+Authorization: Bearer <JWT>
+```
+
+Respuesta:
+
+```json
+{
+  "_id": "...",
+  "email": "usuario@example.com",
+  "name": "Felipe"
+}
+```
+
+La contraseña nunca se expone en la respuesta.
+
+## Recurso Pokémon
+
+Modelo:
+
+```text
+pokemonId
+name
+image
+types
+owner
+```
+
+`pokemonId` corresponde a PokéAPI.
+
+`_id` corresponde al documento MongoDB.
+
+Existe un índice compuesto único:
+
+```text
+owner + pokemonId
+```
+
+para impedir duplicados dentro del equipo de un mismo usuario.
+
+## Equipo persistente
+
+### Obtener equipo
+
+```http
+GET /teams
+Authorization: Bearer <JWT>
+```
+
+Los resultados se filtran por:
+
+```text
+owner = req.user._id
+```
+
+Respuesta:
+
+```json
+{
+  "pokemon": [
+    {
+      "_id": "...",
+      "id": 25,
+      "name": "pikachu",
+      "image": "...",
+      "types": ["electric"]
+    }
+  ],
+  "teamSize": 1,
+  "maxTeamSize": 6
+}
+```
+
+El campo `id` mantiene compatibilidad con el frontend y representa el ID de PokéAPI.
+
+### Agregar Pokémon
+
+```http
+POST /teams/pokemon
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+Ejemplo:
+
+```json
+{
+  "id": 25,
+  "name": "Pikachu",
+  "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png",
+  "types": ["Electric"]
+}
+```
+
+Reglas:
 
 - máximo 6 Pokémon;
-- no se permiten IDs duplicados.
+- sin duplicados dentro del mismo usuario;
+- el mismo Pokémon puede existir en equipos de usuarios distintos;
+- persistencia real en MongoDB;
+- nombre y tipos normalizados.
 
-Códigos usados actualmente:
+### Eliminar Pokémon
+
+```http
+DELETE /teams/pokemon/:id
+Authorization: Bearer <JWT>
+```
+
+`:id` debe ser el `_id` MongoDB del documento.
+
+Comportamiento:
 
 ```text
-200  consulta correcta del equipo
-201  Pokémon agregado correctamente
-400  payload inválido
-409  Pokémon duplicado o equipo lleno
+propio       -> 200
+inexistente  -> 404
+ajeno        -> 403
+id inválido  -> 400
+sin JWT      -> 401
 ```
 
-## Persistencia temporal
+El controlador verifica ownership antes de eliminar.
 
-El equipo se mantiene en un array en memoria dentro del proceso Node.
+## Validación
+
+Celebrate/Joi valida las solicitudes antes del controlador.
+
+Validaciones disponibles:
 
 ```text
-reinicio del servidor
-        ↓
-el equipo vuelve a estar vacío
+validateSignup
+validateSignin
+validateCreatePokemon
+validatePokemonId
 ```
 
-No debe interpretarse como la persistencia definitiva del proyecto.
+Mongoose aplica una segunda capa de validación al persistir.
 
-## Tecnologías actuales
+## Errores
 
-- Node.js
-- Express 5
-- CORS
-- JavaScript CommonJS
-
-Las tecnologías de la Etapa 2 —como MongoDB, Mongoose, JWT, bcrypt, validación avanzada, logging y manejo centralizado de errores— todavía no forman parte de esta implementación temporal.
-
-## Instalación
-
-Clona el repositorio:
-
-```bash
-git clone git@github.com:ai-sprvvnt/pokerockerdex-backend.git
-cd pokerockerdex-backend
-```
-
-Instala dependencias:
-
-```bash
-npm install
-```
-
-Inicia el servidor:
-
-```bash
-npm start
-```
-
-Por defecto el servidor utiliza:
+La API utiliza manejo centralizado y clases de error para:
 
 ```text
-http://localhost:3001
+400 Bad Request
+401 Unauthorized
+403 Forbidden
+404 Not Found
+409 Conflict
+500 Internal Server Error
 ```
 
-También puede recibir el puerto mediante:
+Los errores internos de Node.js o MongoDB no se envían directamente al cliente.
+
+## Logging
+
+La API genera:
 
 ```text
-process.env.PORT
+request.log
+error.log
 ```
 
-## Estructura actual relevante
+Características validadas:
+
+- salida JSON válida;
+- solicitudes HTTP registradas;
+- errores registrados;
+- archivos `.log` ignorados por Git;
+- no se registran `Authorization`, Bearer tokens, contraseñas ni cookies.
+
+## Seguridad HTTP
+
+Se integraron:
+
+- `helmet`;
+- `express-rate-limit`;
+- límite de 100 solicitudes por 15 minutos;
+- headers estándar de rate limit;
+- `X-Powered-By` eliminado;
+- `trust proxy = 1` únicamente en producción;
+- Node ligado a `127.0.0.1`, dejando Nginx como punto público de entrada.
+
+## QA local confirmado
 
 ```text
-pokerockerdex-backend/
-├── app.js
-├── package.json
-└── routes/
-    └── teams.js
+/signup válido                         201
+/signup duplicado                      409
+/signup inválido                       400
+/signin válido                         200 + JWT
+/signin credenciales incorrectas       401
+/signin inválido                       400
+/users/me sin token                    401
+/users/me con token válido             200
+/users/me token inválido               401
+/teams sin token                       401
+GET /teams MongoDB                     200
+POST /teams/pokemon                    201
+duplicado mismo usuario                409
+mismo Pokémon en usuario distinto      201
+aislamiento por owner                  OK
+máximo 6                               OK
+séptimo Pokémon                        409
+persistencia tras reinicio             OK
+payload Pokémon inválido               400
+DELETE propio                          200
+DELETE inexistente                     404
+DELETE ajeno                           403
+DELETE id inválido                     400
+ownership preserva recurso ajeno       OK
+request.log JSON                       OK
+error.log JSON                         OK
+secretos en logs                       NO
+Helmet                                 OK
+rate limiter                           429 validado
+npm audit                              0 vulnerabilidades
 ```
 
-## Integración con el frontend
+## QA HTTPS confirmado
 
-Repositorio:
-
-https://github.com/ai-sprvvnt/pokerockerdex-frontend
-
-El frontend utiliza un cliente separado:
+Backend definitivo:
 
 ```text
-src/utils/MainApi.js
-```
-
-Flujo temporal de Etapa 1.2:
-
-```text
-PokéAPI GET
-   ↓
-PokemonDetail
-   ↓
-POST /teams/pokemon
-   ↓
-PokeRockerDex Backend
-   ↓
-GET /teams
-   ↓
-/my-team
-```
-
-## Próxima evolución — Etapa 2
-
-La API temporal no sustituye el backend definitivo.
-
-En la Etapa 2 se desarrollará la arquitectura full stack prevista, incluyendo al menos:
-
-- modelo de usuario;
-- modelo persistente para los datos/equipo;
-- MongoDB y Mongoose;
-- registro de usuarios;
-- inicio de sesión;
-- JWT;
-- autorización;
-- persistencia por usuario;
-- endpoints GET, POST y DELETE definitivos;
-- validación de solicitudes;
-- manejo centralizado de errores;
-- logging;
-- configuración segura mediante variables de entorno;
-- despliegue mediante HTTPS.
-
-Los nombres y rutas definitivos se cerrarán contra los criterios oficiales de la Etapa 2 antes de comenzar su implementación.
-
-## Deploy
-
-La API temporal de PokeRockerDex se encuentra desplegada públicamente en una VM de Google Cloud.
-
-### API pública
-
 https://api.sprvvnt.mooo.com
+```
 
-El backend se ejecuta con Node.js y Express mediante el proceso PM2:
+Validaciones públicas ejecutadas:
 
-`pokerockerdex-api`
+```text
+GET /teams sin JWT                     401
+POST /signup                           201
+POST /signup duplicado                 409
+POST /signin                           JWT válido
+GET /users/me                          200
+GET /teams usuario nuevo               200
+POST /teams/pokemon                    201
+GET /teams persistente                 200
+DELETE /teams/pokemon/:id              200
+GET /teams posterior                   teamSize 0
+Helmet                                 OK
+RateLimit                              OK
+X-Powered-By                           ausente
+request.log / error.log                JSON válido
+secretos en logs                       NO
+PM2                                    online
+```
 
-La aplicación escucha internamente en el puerto `3001` y Nginx actúa como reverse proxy para exponer la API mediante HTTPS.
+## Producción
 
-Endpoints disponibles actualmente:
+Infraestructura:
 
-- `GET /teams`;
-- `POST /teams/pokemon`.
+```text
+Internet
+   ↓
+Nginx :443
+   ↓
+127.0.0.1:3001
+   ↓
+PM2: pokerockerdex-api
+   ↓
+Node / Express
+   ↓
+MongoDB 127.0.0.1:27017
+```
 
-El frontend público se encuentra disponible en:
+Componentes confirmados:
 
-https://sprvvnt.mooo.com
+- Google Cloud VM;
+- Ubuntu 22.04;
+- Node.js 24.18.0;
+- npm 11.16.0;
+- MongoDB 7.0.37;
+- Nginx;
+- HTTPS con Certbot;
+- PM2;
+- `pokerockerdex-api` online;
+- estado de procesos guardado en `~/.pm2/dump.pm2`.
 
-La persistencia del equipo continúa siendo temporal en memoria. Reiniciar el proceso Node o la VM elimina los datos actuales del equipo.
+Dominios:
 
-Este despliegue permite validar públicamente la integración realizada para la Etapa 1.2. MongoDB, autenticación, JWT, persistencia por usuario y la arquitectura definitiva del backend corresponden a la Etapa 2.
+```text
+Frontend: https://sprvvnt.mooo.com
+API:      https://api.sprvvnt.mooo.com
+```
+
+## Git — commits relevantes de Etapa 2
+
+```text
+bc42faf chore: configurar infraestructura de desarrollo del backend
+d3c30e8 feat: configurar conexion con MongoDB
+b46f50c feat: agregar modelo de usuario
+d041241 feat: agregar modelo de pokemon
+2db38bb feat: agregar validacion y manejo centralizado de errores
+f820010 feat: implementar registro de usuarios
+90eb892 feat: implementar inicio de sesion con JWT
+b0c3066 feat: agregar autorizacion y usuario actual
+c6c2be5 feat: persistir equipo de pokemon en MongoDB
+45e6e61 feat: agregar eliminacion de pokemon con ownership
+c44da4a feat: agregar logging de solicitudes y errores
+86a169b feat: agregar medidas de seguridad al backend
+5979ffb chore: corregir formato de editorconfig
+a6d69f7 fix: configurar proxy seguro para produccion
+3a2b0ba refactor: simplificar exportacion de configuracion
+```
+
+## Estado de entrega
+
+La implementación de la Etapa 2 está preparada para revisión académica de TripleTen. El merge a `main` se realizará únicamente después de recibir la aprobación correspondiente.
 
 ## Aviso
 
