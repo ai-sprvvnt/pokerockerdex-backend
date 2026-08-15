@@ -7,7 +7,24 @@ const ConflictError = require('../errors/ConflictError');
 const { SALT_ROUNDS, DUPLICATE_KEY_ERROR_CODE } = require('../utils/constants');
 
 const UnauthorizedError = require('../errors/UnauthorizedError');
+
 const { jwtSecret } = require('../utils/config');
+
+const NotFoundError = require('../errors/NotFoundError');
+
+const getCurrentUser = (req, res, next) => User.findById(req.user._id)
+  .then((user) => {
+    if (!user) {
+      throw new NotFoundError('Usuario no encontrado.');
+    }
+
+    return res.status(200).send({
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+    });
+  })
+  .catch(next);
 
 const createUser = (req, res, next) => {
   const { email, password, name } = req.body;
@@ -75,4 +92,5 @@ const login = (req, res, next) => {
 module.exports = {
   createUser,
   login,
+  getCurrentUser,
 };
