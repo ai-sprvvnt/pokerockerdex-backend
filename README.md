@@ -6,6 +6,8 @@ API propia de **PokeRockerDex**, una aplicación full stack desarrollada como Pr
 
 La **Etapa 1** está aprobada y cerrada. La **Etapa 2 — Back-end** está implementada, validada localmente y desplegada en producción.
 
+La corrección solicitada durante la segunda revisión de TripleTen ya fue aplicada en la rama `stage-back-end` y está pendiente de merge a `main` y validación final en producción.
+
 El backend definitivo incluye:
 
 - infraestructura de desarrollo configurada;
@@ -13,7 +15,7 @@ El backend definitivo incluye:
 - modelos `User` y `Pokemon`;
 - validación con Celebrate/Joi;
 - manejo centralizado de errores;
-- `POST /signup` con bcrypt;
+- `POST /signup` con bcrypt y contraseña mínima de 8 caracteres;
 - `POST /signin` con JWT;
 - middleware de autorización;
 - `GET /users/me`;
@@ -85,6 +87,8 @@ Respuesta exitosa:
 ```text
 201 Created
 ```
+
+La contraseña debe contener al menos 8 caracteres.
 
 La contraseña se almacena mediante bcrypt y no se devuelve al cliente.
 
@@ -334,6 +338,8 @@ Se integraron:
 /signup válido                         201
 /signup duplicado                      409
 /signup inválido                       400
+/signup password < 8 caracteres        400
+/signup password >= 8 caracteres       201
 /signin válido                         200 + JWT
 /signin credenciales incorrectas       401
 /signin inválido                       400
@@ -360,6 +366,7 @@ error.log JSON                         OK
 secretos en logs                       NO
 Helmet                                 OK
 rate limiter                           429 validado
+npm run lint                           OK
 npm audit                              0 vulnerabilidades
 ```
 
@@ -448,11 +455,28 @@ c44da4a feat: agregar logging de solicitudes y errores
 5979ffb chore: corregir formato de editorconfig
 a6d69f7 fix: configurar proxy seguro para produccion
 3a2b0ba refactor: simplificar exportacion de configuracion
+e0bcbf4 fix: establecer longitud minima de contraseña
 ```
 
 ## Estado de entrega
 
-La implementación de la Etapa 2 está preparada para revisión académica de TripleTen. El merge a `main` se realizará únicamente después de recibir la aprobación correspondiente.
+La segunda revisión de TripleTen indicó que la Etapa 2 está a un paso de ser aprobada.
+
+La observación técnica solicitada fue establecer una longitud mínima para las contraseñas de nuevos usuarios. La validación se actualizó a un mínimo de 8 caracteres y se verificó localmente antes de publicar la corrección.
+
+Como parte del cierre de la revisión, TripleTen solicitó:
+
+- fusionar los cambios pendientes hacia las ramas `main`;
+- verificar que los despliegues estén actualizados;
+- realizar la validación final en producción;
+- compartir las URLs públicas del frontend y de la API.
+
+Estado actual:
+
+```text
+Frontend PR #8   stage-react-api -> main   MERGED
+Backend PR #3    stage-back-end -> main    pendiente de merge
+```
 
 ## Aviso
 
