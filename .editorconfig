@@ -1,0 +1,24 @@
+# http://editorconfig.org
+
+# Evita que se busquen más .editorconfig en directorios superiores
+root = true
+
+[*]
+# Indentación
+indent_style = space
+indent_size = 2
+
+# Final de línea (Linux/Mac compatible)
+end_of_line = lf
+
+# Codificación
+charset = utf-8
+
+# Limpieza automática
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
+
+# Nueva línea al final de archivo
+insert_final_newline = true
